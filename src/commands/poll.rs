@@ -1,7 +1,6 @@
-use csv::ReaderBuilder;
-
 use serenity::client::Context;
 use serenity::framework::standard::{
+    Args,
     macros::command,
     CommandResult,
 };
@@ -25,59 +24,50 @@ fn emoji_digit(i: usize) -> String {
 }
 
 #[command]
-async fn poll(ctx: &Context, msg: &Message) -> CommandResult {
-    let mut rdr = ReaderBuilder::new()
-        .delimiter(b' ')
-        .has_headers(false)
-        .from_reader(msg.content.as_bytes());
+async fn poll(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    args.quoted();
+    let title = args.single_quoted::<String>().unwrap();
 
-    if let Some(Ok(result)) = rdr.records().next() {
-        if result.len() < 3 {
-            error!("message \"{}\" is not valid", msg.content);
-            return Ok(());
-        }
 
-        let title = result.get(1).unwrap();
+    // Could not get args.iter() to respect quoted() even though docs say it should.
+    // So I'm just iterating until the args are exhausted
+    let mut options = Vec::new();
+    let mut i = 0;
+    while !args.is_empty() {
+        let option_text = args.single_quoted::<String>().unwrap();
+        let mut emoji = emoji_digit(i + 1);
+        emoji.push_str("\t");
+        emoji.push_str(&option_text);
+        options.push(emoji);
+        i += 1;
+    }
 
-        let options = (2..result.len())
-            .map(|i| result.get(i).unwrap())
-            .enumerate()
-            .map(|(i, option_text)| {
-                let mut emoji = emoji_digit(i + 1);
-                emoji.push_str("\t");
-                emoji.push_str(option_text);
-                emoji
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
+    let joined = options.join("\n");
 
-        let msg = msg
-            .channel_id
-            .send_message(&ctx.http, |m| {
-                m.embed(|e| {
-                    e.field(title, options, false);
-                    e
-                });
+    let msg = msg
+        .channel_id
+        .send_message(&ctx.http, |m| {
+            m.embed(|e| {
+                e.field(title, joined, false);
+                e
+            });
 
-                m
-            })
+            m
+        })
+        .await;
+
+    if let Err(ref why) = msg {
+        info!("Error sending message: {:?}", why);
+    }
+
+    let msg = msg.unwrap();
+    for i in 1..options.len()+1 {
+        let react = msg
+            .react(&ctx.http, ReactionType::Unicode(emoji_digit(i)))
             .await;
-
-        if let Err(ref why) = msg {
-            info!("Error sending message: {:?}", why);
+        if let Err(why) = react {
+            error!("Error sending reaction: {:?}", why);
         }
-
-        let msg = msg.unwrap();
-        for i in 2..result.len() {
-            let react = msg
-                .react(&ctx.http, ReactionType::Unicode(emoji_digit(i - 1)))
-                .await;
-            if let Err(why) = react {
-                error!("Error sending reaction: {:?}", why);
-            }
-        }
-    } else {
-        error!("message \"{}\" is not valid", msg.content);
     };
 
     Ok(())
