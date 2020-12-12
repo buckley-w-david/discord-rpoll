@@ -1,14 +1,13 @@
 mod commands;
+mod database;
 
 use std::{
     collections::HashSet,
     env,
-    sync::Arc,
 };
 
 use serenity::{
     async_trait,
-    client::bridge::gateway::ShardManager,
     framework::{
         StandardFramework,
         standard::macros::group,
@@ -23,17 +22,15 @@ use tracing_subscriber::{
     EnvFilter,
 };
 
+use sqlx::{
+    sqlite::SqlitePool,
+};
 
 use commands::{
     poll::*,
     role::*,
+    db::*,
 };
-
-pub struct ShardManagerContainer;
-
-impl TypeMapKey for ShardManagerContainer {
-    type Value = Arc<Mutex<ShardManager>>;
-}
 
 struct Handler;
 
@@ -76,7 +73,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(poll, role)]
+#[commands(poll, role, execute, fetch)]
 struct General;
 
 #[group]
@@ -101,8 +98,15 @@ async fn main() {
 
     let token = env::var("DISCORD_TOKEN")
         .expect("Expected a token in the environment");
+    
+    let db_conn = env::var("DATABASE_URL")
+        .expect("Expected a db connection string in the environment");
 
     let http = Http::new_with_token(&token);
+    let pool = match SqlitePool::connect(&db_conn).await {
+        Ok(pool) => pool,
+        Err(why) => panic!("Could not create a db pool: {:?}", why),
+    };
 
     // We will fetch your bot's owners and id
     let (owners, _bot_id) = match http.get_current_application_info().await {
@@ -131,11 +135,10 @@ async fn main() {
 
     {
         let mut data = client.data.write().await;
-        data.insert::<ShardManagerContainer>(client.shard_manager.clone());
+        data.insert::<database::DbConnection>(pool);
     }
 
     let shard_manager = client.shard_manager.clone();
-
     tokio::spawn(async move {
         tokio::signal::ctrl_c().await.expect("Could not register ctrl+c handler");
         shard_manager.lock().await.shutdown_all().await;
