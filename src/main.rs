@@ -30,6 +30,7 @@ use commands::{
     poll::*,
     role::*,
     db::*,
+    scream::*,
 };
 
 struct Handler;
@@ -73,7 +74,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(poll, role, execute, fetch)]
+#[commands(poll, role, execute, fetch, scream)]
 struct General;
 
 #[group]
