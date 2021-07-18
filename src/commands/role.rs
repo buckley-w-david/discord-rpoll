@@ -5,7 +5,7 @@ use serenity::framework::standard::{
     CommandResult,
 };
 use serenity::model::{
-    channel::Message,
+    channel::{Message, ReactionType},
     guild,
 };
 use tracing::{error, info};
@@ -43,6 +43,12 @@ async fn role(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                         RequestType::Remove => member.remove_role(&ctx.http, role.id).await,
                         _ => Ok(()),
                     };
+                    let react = if let Ok(_) = result {
+                        "👍"
+                    } else {
+                        "👎"
+                    };
+                    let result = msg.react(&ctx.http, ReactionType::Unicode(String::from(react))).await;
                     info!("result: {:#?}", result);
                 }
             },
