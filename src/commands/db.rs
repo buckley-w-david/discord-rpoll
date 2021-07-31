@@ -1,3 +1,4 @@
+/*
 use crate::database::DbConnection;
 
 use tokio::stream::StreamExt;
@@ -67,3 +68,4 @@ async fn fetch(ctx: &Context, msg: &Message) -> CommandResult {
 
     Ok(())
 }
+*/

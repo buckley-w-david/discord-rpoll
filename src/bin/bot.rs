@@ -1,9 +1,6 @@
-mod commands;
-mod database;
-
 use std::{
-    collections::HashSet,
     env,
+    collections::HashSet,
 };
 
 use serenity::{
@@ -26,55 +23,23 @@ use sqlx::{
     sqlite::SqlitePool,
 };
 
-use commands::{
-    poll::*,
-    role::*,
-    db::*,
-    scream::*,
+use utility_bot::{
+    database,
+    commands::{
+        role::ROLE_COMMAND,
+        poll::POLL_COMMAND,
+        scream::SCREAM_COMMAND,
+    }
 };
+
 
 struct Handler;
 
 #[async_trait]
-impl EventHandler for Handler {
-    // We use the cache_ready event just in case some cache operation is required in whatever use
-    // case you have for this.
-    // async fn cache_ready(&self, ctx: Context, _guilds: Vec<GuildId>) {
-    //     println!("Cache built successfully!");
-
-    //     // it's safe to clone Context, but Arc is cheaper for this use case.
-    //     // Untested claim, just theoretically. :P
-    //     let ctx = Arc::new(ctx);
-
-    //     // We need to check that the loop is not already running when this event triggers,
-    //     // as this event triggers every time the bot enters or leaves a guild, along every time the
-    //     // ready shard event triggers.
-    //     //
-    //     // An AtomicBool is used because it doesn't require a mutable reference to be changed, as
-    //     // we don't have one due to self being an immutable reference.
-    //     if !self.is_loop_running.load(Ordering::Relaxed) {
-
-    //         // We have to clone the Arc, as it gets moved into the new thread.
-    //         let ctx1 = Arc::clone(&ctx);
-    //         // tokio::spawn creates a new green thread that can run in parallel with the rest of
-    //         // the application.
-    //         tokio::spawn(async move {
-    //             loop {
-    //                 // We clone Context again here, because Arc is owned, so it moves to the
-    //                 // new function.
-    //                 rainbow(Arc::clone(&ctx1), guild::Guild::get(&ctx.http, _guilds.get(0).unwrap()).await.unwrap()).await;
-    //                 tokio::time::delay_for(Duration::from_millis(500)).await;
-    //             }
-    //         });
-
-    //         // Now that the loop is running, we set the bool to true
-    //         self.is_loop_running.swap(true, Ordering::Relaxed);
-    //     }
-    // }
-}
+impl EventHandler for Handler { }
 
 #[group]
-#[commands(poll, role, execute, fetch, scream)]
+#[commands(poll, role, scream)]
 struct General;
 
 #[group]
