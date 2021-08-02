@@ -33,20 +33,21 @@ def create_bot(config: ScheduledTasksConfig):
             await ctx.send(pprint.pformat(vars(ctx), indent=4))
 
         @commands.command()
+        @commands.is_owner()
         async def schedule(self, ctx):
             await ctx.send(f"Schedule?")
 
             def valid_cron(message):
-                return CronSlices.is_valid(message.content) and message.author,id == ctx.author.id
+                return CronSlices.is_valid(message.content) and message.author.id == ctx.author.id
 
             def valid_msg(message):
-                return message.author,id == ctx.author.id
+                return message.author.id == ctx.author.id
 
             msg = await self.bot.wait_for("message", check=valid_cron)
             schedule = msg.content
 
             await ctx.send("Message?")
-            msg = await self.bot.wait_for("message", chech=valid_msg)
+            msg = await self.bot.wait_for("message", check=valid_msg)
             await msg.add_reaction("✅")
 
             job_id = uuid.uuid4()
