@@ -33,6 +33,8 @@ def run(config_file: Path = Path('tasks.toml')):
 
 @app.command()
 def send(channel_id: int, content: Path, attachments: List[Path], config_file: Path = Path('./tasks.toml')):
+    touch(config_file)
+    config = ScheduledTasksConfig.load(config_file)
     client = discord.Client()
 
     @client.event

@@ -19,3 +19,4 @@ class TomlModel(BaseModel):
 class ScheduledTasksConfig(TomlModel):
     task_base: pathlib.Path = './tasks'
     token: str = 'REPLACE ME'
+    send: pathlib.Path = 'scheduled-tasks send'
